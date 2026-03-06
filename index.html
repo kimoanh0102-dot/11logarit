@@ -1,0 +1,387 @@
+<!DOCTYPE html>
+<html lang="vi">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Mastery: Lôgarit - Toán 11</title>
+    <script src="https://cdn.tailwindcss.com"></script>
+    <script src="https://polyfill.io/v3/polyfill.min.js?features=es6"></script>
+    <script>
+        window.MathJax = {
+            tex: { 
+                inlineMath: [['$', '$'], ['\\(', '\\)']], 
+                displayMath: [['$$', '$$']],
+                processEscapes: true
+            },
+            options: { enableMenu: false },
+            svg: { fontCache: 'global' }
+        };
+    </script>
+    <script id="MathJax-script" async src="https://cdn.jsdelivr.net/npm/mathjax@3/es5/tex-mml-chtml.js"></script>
+    <style>
+        @import url('https://fonts.googleapis.com/css2?family=Plus+Jakarta+Sans:wght@400;500;600;700;800&display=swap');
+        body { font-family: 'Plus Jakarta Sans', sans-serif; background: #f0f9ff; color: #1e293b; }
+        .math-render { opacity: 0; transition: opacity 0.5s ease; }
+        .math-render.ready { opacity: 1; }
+        .choice-btn:active { transform: scale(0.97); }
+        .explanation-box { 
+            border-left: 8px solid #2563eb; 
+            background-color: #eff6ff;
+            box-shadow: 0 4px 15px rgba(37, 99, 235, 0.08);
+            animation: slideUp 0.6s cubic-bezier(0.16, 1, 0.3, 1);
+        }
+        @keyframes slideUp { from { opacity: 0; transform: translateY(30px); } to { opacity: 1; transform: translateY(0); } }
+        .btn-check { box-shadow: 0 10px 20px -5px rgba(37, 99, 235, 0.3); }
+        .item-row { transition: all 0.2s ease; }
+        .item-row:hover { background-color: #ffffff; }
+    </style>
+</head>
+<body class="min-h-screen flex items-center justify-center p-2 md:p-6">
+    <div id="game-app" class="w-full max-w-5xl bg-white rounded-[2.5rem] shadow-[0_40px_80px_-20px_rgba(37,99,235,0.12)] border border-blue-50 flex flex-col">
+        
+        <!-- Header -->
+        <div class="bg-blue-600 p-8 text-white text-center relative overflow-hidden rounded-t-[2.5rem]">
+            <div class="absolute inset-0 bg-gradient-to-br from-blue-800 via-blue-600 to-sky-500 opacity-95"></div>
+            <div class="relative z-10">
+                <h1 class="text-3xl font-extrabold tracking-tight text-white mb-2 italic uppercase">CHUYÊN ĐỀ LÔGARIT</h1>
+                <p class="text-blue-100 text-sm font-medium opacity-90 uppercase tracking-[0.3em]">Định Nghĩa - Tính Chất - Toán Thực Tế</p>
+            </div>
+        </div>
+
+        <!-- Progress bar -->
+        <div id="progress-container" class="hidden h-3 bg-slate-100 relative">
+            <div id="progress-bar" class="h-full bg-gradient-to-r from-blue-400 to-sky-400 transition-all duration-700 w-0"></div>
+        </div>
+
+        <!-- Content Area -->
+        <div id="main-content" class="p-6 md:p-12 flex-grow min-h-[600px] flex flex-col overflow-y-auto">
+            <div id="start-screen" class="text-center py-16 my-auto">
+                <div class="text-[10rem] mb-8 leading-none">📊</div>
+                <h2 class="text-4xl font-black text-slate-800 mb-6 uppercase tracking-tighter">KIỂM TRA KIẾN THỨC</h2>
+                <p class="text-slate-500 mb-12 max-w-2xl mx-auto leading-relaxed text-xl">
+                    Hệ thống 50 câu hỏi chuẩn mực <b>chỉ bao gồm biểu thức và tính chất Lôgarit</b>. (Không có phương trình/bất phương trình/hàm số). <br>
+                    Lời giải chuẩn LaTeX. Thuật toán đảm bảo lượt đề sau <b class="text-blue-600">không trùng quá 2 câu</b> với lượt làm đề ngay liền trước.
+                </p>
+                <button onclick="initGame()" class="bg-blue-600 hover:bg-blue-700 text-white px-24 py-6 rounded-[2rem] font-black text-2xl shadow-xl transition-all active:scale-95 transform hover:-translate-y-1">BẮT ĐẦU NGAY</button>
+            </div>
+        </div>
+
+        <!-- Footer Control -->
+        <div id="footer-actions" class="hidden p-8 bg-slate-50 border-t border-slate-100 flex flex-col md:flex-row justify-between items-center gap-6 rounded-b-[2.5rem]">
+            <div id="status" class="text-lg font-black text-blue-600 uppercase tracking-[0.25em]">CÂU 1 / 15</div>
+            <div class="flex gap-4 w-full md:w-auto">
+                <button id="check-btn" onclick="processAnswer()" class="flex-1 md:flex-none bg-blue-600 hover:bg-blue-700 text-white px-16 py-4 rounded-2xl font-bold text-xl transition shadow-lg btn-check active:scale-95">Kiểm tra</button>
+                <button id="next-btn" onclick="renderNext()" class="hidden flex-1 md:flex-none bg-sky-500 hover:bg-sky-600 text-white px-16 py-4 rounded-2xl font-bold text-xl shadow-lg transition active:scale-95">Tiếp theo →</button>
+                <button id="result-btn" onclick="finishGame()" class="hidden flex-1 md:flex-none bg-orange-500 hover:bg-orange-600 text-white px-16 py-4 rounded-2xl font-bold text-xl shadow-lg transition active:scale-95">Kết quả</button>
+            </div>
+        </div>
+    </div>
+
+    <script>
+        const MASTER_POOL = {
+            part1: [
+                { id: "log_p1_1", question: "Cho $a$ là số thực dương tùy ý, $\\ln(9a) - \\ln(7a)$ bằng?", options: ["$\\frac{\\ln(9a)}{\\ln(7a)}$", "$\\ln\\frac{9}{7}$", "$\\ln(2a)$", "$\\frac{\\ln 9}{\\ln 7}$"], correct: 1, explanation: "Với $a>0$, ta áp dụng công thức hiệu hai lôgarit cùng cơ số: <br>$\\ln(9a) - \\ln(7a) = \\ln\\left(\\frac{9a}{7a}\\right) = \\ln\\frac{9}{7}$." },
+                { id: "log_p1_2", question: "Cho $\\log_3 a = 3, \\log_3 b = -1$. Tính giá trị của biểu thức $\\log_3(a \\cdot b)$.", options: ["$-3$", "$2$", "$-\\frac{1}{3}$", "$-2$"], correct: 1, explanation: "Áp dụng công thức lôgarit của một tích: <br>$\\log_3(a \\cdot b) = \\log_3 a + \\log_3 b = 3 + (-1) = 2$." },
+                { id: "log_p1_3", question: "Với $a$ là số thực dương tùy ý, $\\log_7(7a)$ bằng:", options: ["$1 - \\log_7 a$", "$1 + \\log_7 a$", "$1 + a$", "$a$"], correct: 1, explanation: "Áp dụng tính chất lôgarit của một tích: <br>$\\log_7(7a) = \\log_7 7 + \\log_7 a = 1 + \\log_7 a$." },
+                { id: "log_p1_4", question: "Với $a$ là số thực dương tùy ý khác $1$, biểu thức $\\log_{27} a^3$ bằng:", options: ["$3 + \\log_3 a$", "$\\frac{1}{3} \\log_3 a$", "$\\log_3 a$", "$3 + \\frac{1}{3} \\log_3 a$"], correct: 2, explanation: "Áp dụng công thức đổi cơ số và biến đổi số mũ: <br>$\\log_{27} a^3 = \\log_{3^3} a^3 = \\frac{3}{3} \\log_3 a = \\log_3 a$." },
+                { id: "log_p1_5", question: "Với $a>0, a \\ne 1$, giá trị của biểu thức $a^{2\\log_a 5}$ là:", options: ["$5$", "$25$", "$\\frac{1}{5}$", "$\\sqrt{5}$"], correct: 1, explanation: "Sử dụng tính chất $a^{\\log_a b} = b$, ta biến đổi: <br>$a^{2\\log_a 5} = (a^{\\log_a 5})^2 = 5^2 = 25$." },
+                { id: "log_p1_6", question: "Với $a, b$ là các số thực dương bất kỳ thỏa mãn $\\log_3 a - \\log_3 \\sqrt{b} = 2$. Khẳng định nào sau đây đúng?", options: ["$a^2 b = 81$", "$a^2 = 81b$", "$a - \\sqrt{b} = 9$", "$\\frac{a}{\\sqrt{b}} = 2$"], correct: 1, explanation: "Ta có: $\\log_3 a - \\log_3 \\sqrt{b} = 2 \\Leftrightarrow \\log_3 \\left(\\frac{a}{\\sqrt{b}}\\right) = 2$. <br>Suy ra $\\frac{a}{\\sqrt{b}} = 3^2 = 9 \\Leftrightarrow a = 9\\sqrt{b}$. <br>Bình phương hai vế ta được $a^2 = 81b$." },
+                { id: "log_p1_7", question: "Cho $a$ là số thực dương khác 1. Mệnh đề nào dưới đây đúng với mọi số thực dương $x, y$?", options: ["$\\log_a \\frac{x}{y} = \\log_a x - \\log_a y$", "$\\log_a \\frac{x}{y} = \\log_a x + \\log_a y$", "$\\log_a \\frac{x}{y} = \\log_a (x-y)$", "$\\log_a \\frac{x}{y} = \\frac{\\log_a x}{\\log_a y}$"], correct: 0, explanation: "Theo tính chất cơ bản của lôgarit, lôgarit của một thương bằng hiệu các lôgarit: $\\log_a \\frac{x}{y} = \\log_a x - \\log_a y$." },
+                { id: "log_p1_8", question: "Cho $a>0$ và $a \\ne 1$, khi đó $\\log_a \\sqrt[3]{a}$ bằng:", options: ["$\\frac{1}{3}$", "$3$", "$-3$", "$-\\frac{1}{3}$"], correct: 0, explanation: "Biến đổi căn bậc 3 về số mũ phân số: <br>$\\log_a \\sqrt[3]{a} = \\log_a a^{\\frac{1}{3}} = \\frac{1}{3} \\log_a a = \\frac{1}{3}$." },
+                { id: "log_p1_9", question: "Nếu $\\log_2 3 = a$ thì $\\log_{72} 108$ tính theo $a$ bằng:", options: ["$\\frac{2+a}{3+a}$", "$\\frac{2+3a}{3+2a}$", "$\\frac{ab}{a+b}$", "$\\frac{2+3a}{2+2a}$"], correct: 1, explanation: "Sử dụng công thức đổi cơ số về cơ số 2: <br>$\\log_{72} 108 = \\frac{\\log_2 108}{\\log_2 72} = \\frac{\\log_2 (2^2 \\cdot 3^3)}{\\log_2 (2^3 \\cdot 3^2)} = \\frac{\\log_2 2^2 + \\log_2 3^3}{\\log_2 2^3 + \\log_2 3^2}$. <br>$\\Leftrightarrow \\frac{2 + 3\\log_2 3}{3 + 2\\log_2 3} = \\frac{2+3a}{3+2a}$." },
+                { id: "log_p1_10", question: "Với mọi số thực dương $a$ và $b$ thỏa mãn $a^2+b^2=8ab$, mệnh đề nào dưới đây đúng?", options: ["$\\log(a+b) = \\frac{1}{2}(\\log a + \\log b)$", "$\\log(a+b) = 1 + \\log a + \\log b$", "$\\log(a+b) = \\frac{1}{2}(1 + \\log a + \\log b)$", "$\\log(a+b) = \\frac{1}{2} + \\log a + \\log b$"], correct: 2, explanation: "Thêm $2ab$ vào hai vế: $a^2+2ab+b^2 = 10ab \\Leftrightarrow (a+b)^2 = 10ab$. <br>Lấy lôgarit cơ số 10 hai vế: $\\log(a+b)^2 = \\log(10ab) \\Leftrightarrow 2\\log(a+b) = \\log 10 + \\log a + \\log b$. <br>$\\Leftrightarrow 2\\log(a+b) = 1 + \\log a + \\log b \\Leftrightarrow \\log(a+b) = \\frac{1}{2}(1 + \\log a + \\log b)$." },
+                { id: "log_p1_11", question: "Cho $\\log_2 5 = a$, $\\log_3 5 = b$. Khi đó $\\log_6 5$ tính theo $a$ và $b$ là:", options: ["$\\frac{1}{a+b}$", "$\\frac{ab}{a+b}$", "$a+b$", "$a^2+b^2$"], correct: 1, explanation: "Dùng công thức nghịch đảo: $\\log_6 5 = \\frac{1}{\\log_5 6} = \\frac{1}{\\log_5(2 \\cdot 3)} = \\frac{1}{\\log_5 2 + \\log_5 3}$. <br>Do $\\log_5 2 = \\frac{1}{a}$ và $\\log_5 3 = \\frac{1}{b}$, ta có $\\log_6 5 = \\frac{1}{\\frac{1}{a} + \\frac{1}{b}} = \\frac{1}{\\frac{a+b}{ab}} = \\frac{ab}{a+b}$." },
+                { id: "log_p1_12", question: "Cho $\\log_a b = 2$, $\\log_a c = -2$ (với $a, b, c > 0, a \\ne 1$). Khi đó $\\log_a(a^2 b^3 \\sqrt{c})$ bằng:", options: ["12", "10", "8", "7"], correct: 3, explanation: "Phân tích biểu thức theo các tính chất cơ bản: <br>$\\log_a(a^2 b^3 \\sqrt{c}) = \\log_a a^2 + \\log_a b^3 + \\log_a c^{\\frac{1}{2}}$. <br>$= 2 + 3\\log_a b + \\frac{1}{2}\\log_a c = 2 + 3(2) + \\frac{1}{2}(-2) = 2 + 6 - 1 = 7$." },
+                { id: "log_p1_13", question: "Tính giá trị của biểu thức $P = \\log_2 8 + \\log_3 \\frac{1}{27}$.", options: ["0", "6", "1", "9"], correct: 0, explanation: "Ta có $\\log_2 8 = \\log_2 2^3 = 3$. <br>Và $\\log_3 \\frac{1}{27} = \\log_3 3^{-3} = -3$. <br>Vậy $P = 3 + (-3) = 0$." },
+                { id: "log_p1_14", question: "Giá trị của biểu thức $10^{\\log 100}$ bằng bao nhiêu?", options: ["10", "100", "2", "1000"], correct: 1, explanation: "Sử dụng tính chất $a^{\\log_a b} = b$, với lôgarit thập phân có cơ số $a=10$. <br>Suy ra $10^{\\log 100} = 100$." },
+                { id: "log_p1_15", question: "Tính giá trị của $\\log_{\\sqrt{2}} 4$.", options: ["2", "8", "4", "16"], correct: 2, explanation: "Ta biến đổi số mũ của cơ số và số bị lấy logarit: <br>$\\log_{\\sqrt{2}} 4 = \\log_{2^{\\frac{1}{2}}} 2^2 = \\frac{2}{\\frac{1}{2}} \\log_2 2 = 2 \\cdot 2 = 4$." },
+                { id: "log_p1_16", question: "Rút gọn biểu thức $T = \\log_a b \\cdot \\log_b c \\cdot \\log_c a$ (với $a,b,c > 0$ và khác 1).", options: ["$a+b+c$", "0", "1", "$\\log_{abc} 1$"], correct: 2, explanation: "Áp dụng công thức đổi cơ số liên tiếp (quy tắc dây chuyền): <br>$\\log_a b \\cdot \\log_b c \\cdot \\log_c a = \\log_a c \\cdot \\log_c a = \\log_a a = 1$." },
+                { id: "log_p1_17", question: "Giá trị của biểu thức $\\log 2 + \\log 5$ là:", options: ["$\\log 7$", "10", "1", "$\\ln 10$"], correct: 2, explanation: "Áp dụng tính chất lôgarit của một tích (với cùng cơ số 10): <br>$\\log 2 + \\log 5 = \\log(2 \\cdot 5) = \\log 10 = 1$." },
+                { id: "log_p1_18", question: "Giá trị của biểu thức $e^{\\ln 7}$ bằng:", options: ["$e^7$", "7", "$\\ln 7$", "1"], correct: 1, explanation: "Áp dụng tính chất cơ bản của lôgarit: $a^{\\log_a b} = b$. <br>Với cơ số là số $e$, ta có $e^{\\ln 7} = e^{\\log_e 7} = 7$." },
+                { id: "log_p1_19", question: "Công thức nào sau đây dùng để chuyển đổi lôgarit từ cơ số $a$ sang cơ số $c$?", options: ["$\\log_a b = \\frac{\\log_c a}{\\log_c b}$", "$\\log_a b = \\log_c b \\cdot \\log_c a$", "$\\log_a b = \\frac{\\log_c b}{\\log_c a}$", "$\\log_a b = \\log_c (b-a)$"], correct: 2, explanation: "Theo định lý về đổi cơ số lôgarit: $\\log_a b = \\frac{\\log_c b}{\\log_c a}$ (với điều kiện các cơ số và biểu thức hợp lệ)." },
+                { id: "log_p1_20", question: "Giá trị của biểu thức $\\ln(\\sqrt{e})$ bằng bao nhiêu?", options: ["$\\frac{1}{2}$", "1", "2", "$e$"], correct: 0, explanation: "Ta biến đổi căn bậc hai thành số mũ: $\\ln(\\sqrt{e}) = \\ln(e^{\\frac{1}{2}}) = \\frac{1}{2} \\ln e = \\frac{1}{2} \\cdot 1 = \\frac{1}{2}$." },
+                { id: "log_p1_21", question: "Giá trị của biểu thức $\\log_2 \\frac{1}{64}$ là:", options: ["6", "-6", "$\\frac{1}{6}$", "8"], correct: 1, explanation: "Biến đổi biểu thức dưới dấu lôgarit về lũy thừa cơ số 2: <br>$\\log_2 \\frac{1}{64} = \\log_2 (2^{-6}) = -6 \\log_2 2 = -6$." },
+                { id: "log_p1_22", question: "Giá trị của $\\log_{\\frac{1}{3}} 9$ bằng bao nhiêu?", options: ["2", "-2", "$\\frac{1}{2}$", "$-\\frac{1}{2}$"], correct: 1, explanation: "Đưa về cùng cơ số 3: <br>$\\log_{\\frac{1}{3}} 9 = \\log_{3^{-1}} 3^2 = \\frac{2}{-1} \\log_3 3 = -2$." },
+                { id: "log_p1_23", question: "Rút gọn biểu thức $\\log_a a^5$ (với $a > 0, a \\ne 1$).", options: ["$a$", "$\\frac{1}{5}$", "$5$", "$a^5$"], correct: 2, explanation: "Theo tính chất lôgarit của lũy thừa: $\\log_a a^5 = 5 \\log_a a = 5 \\cdot 1 = 5$." },
+                { id: "log_p1_24", question: "Giá trị của biểu thức $\\log_2 3 \\cdot \\log_3 4 \\cdot \\log_4 8$ là:", options: ["2", "3", "4", "24"], correct: 1, explanation: "Áp dụng công thức đổi cơ số (tích các lôgarit nối tiếp): <br>$\\log_2 3 \\cdot \\log_3 4 \\cdot \\log_4 8 = \\log_2 4 \\cdot \\log_4 8 = \\log_2 8 = \\log_2 2^3 = 3$." },
+                { id: "log_p1_25", question: "Biểu thức $\\log_a(b^2) + \\log_a(b^3)$ (với $a, b > 0, a \\ne 1$) có thể rút gọn thành:", options: ["$\\log_a(b^5)$", "$\\log_a(b^6)$", "$5$", "$6$"], correct: 0, explanation: "Áp dụng tính chất lôgarit của một tích: <br>$\\log_a(b^2) + \\log_a(b^3) = \\log_a(b^2 \\cdot b^3) = \\log_a(b^5)$." },
+                { id: "log_p1_26", question: "Tính giá trị của biểu thức $a^{\\log_{\\sqrt{a}} 3}$ với $a > 0, a \\ne 1$.", options: ["3", "$\\sqrt{3}$", "9", "27"], correct: 2, explanation: "Biến đổi số mũ: $\\log_{\\sqrt{a}} 3 = \\log_{a^{\\frac{1}{2}}} 3 = 2\\log_a 3 = \\log_a 3^2 = \\log_a 9$. <br>Thay vào biểu thức: $a^{\\log_a 9} = 9$." },
+                { id: "log_p1_27", question: "Giá trị của biểu thức $\\log_{100} 10$ là:", options: ["2", "10", "$\\frac{1}{2}$", "0"], correct: 2, explanation: "Ta có: $\\log_{100} 10 = \\log_{10^2} 10^1 = \\frac{1}{2} \\log_{10} 10 = \\frac{1}{2}$." },
+                { id: "log_p1_28", question: "Tính giá trị biểu thức $3^{\\log_3 5 - 1}$.", options: ["$\\frac{5}{3}$", "$\\frac{3}{5}$", "2", "15"], correct: 0, explanation: "Tách biểu thức số mũ: $3^{\\log_3 5 - 1} = \\frac{3^{\\log_3 5}}{3^1} = \\frac{5}{3}$." },
+                { id: "log_p1_29", question: "Tính giá trị của biểu thức $T = \\ln e^3 + \\log 1000$.", options: ["3000", "1003", "6", "0"], correct: 2, explanation: "Ta có $\\ln e^3 = 3\\ln e = 3$. <br>$\\log 1000 = \\log_{10} 10^3 = 3\\log 10 = 3$. <br>Vậy $T = 3 + 3 = 6$." },
+                { id: "log_p1_30", question: "Biết $\\log_a b = 3$. Tính giá trị của biểu thức $\\log_a \\left(\\frac{a^2}{b}\\right)$.", options: ["-1", "1", "$\\frac{2}{3}$", "$-\\frac{1}{3}$"], correct: 0, explanation: "Phân tích biểu thức: $\\log_a \\left(\\frac{a^2}{b}\\right) = \\log_a a^2 - \\log_a b = 2 - 3 = -1$." }
+            ],
+            part2: [
+                { id: "log_p2_1", question: "Cho $a, b, c > 1$ và $m, n \\in \\mathbb{R}$. Xét tính đúng sai của các mệnh đề sau:", items: [
+                    { text: "$\\log_a \\sqrt{a} = \\frac{1}{2}$.", isTrue: true },
+                    { text: "$\\log_a b^2 \\cdot \\log_{\\sqrt{b}} a^3 = 12$.", isTrue: true },
+                    { text: "Cho $\\log 3 = m$, $\\log 7 = n$. Khi đó $\\log_3 70 = \\frac{n+1}{m}$.", isTrue: true },
+                    { text: "Cho $\\log_{32} a + \\log_8 b + \\log_2 c = 11$ và $\\sqrt[5]{a} = \\sqrt[6]{b} = \\sqrt[8]{c}$. Khi đó $\\log_2(abc) = 19$.", isTrue: true }
+                ], explanation: "<b>Giải thích chi tiết:</b><br>a) Đúng. $\\log_a \\sqrt{a} = \\log_a a^{1/2} = 1/2$.<br>b) Đúng. $\\log_a b^2 \\cdot \\log_{\\sqrt{b}} a^3 = 2\\log_a b \\cdot \\frac{3}{1/2}\\log_b a = 2\\log_a b \\cdot 6\\log_b a = 12$.<br>c) Đúng. $\\log_3 70 = \\frac{\\log 70}{\\log 3} = \\frac{\\log(7 \\cdot 10)}{\\log 3} = \\frac{\\log 7 + \\log 10}{\\log 3} = \\frac{n+1}{m}$.<br>d) Đúng. Đặt $\\sqrt[5]{a} = \\sqrt[6]{b} = \\sqrt[8]{c} = y \\Rightarrow a=y^5, b=y^6, c=y^8$. Thay vào: $\\frac{1}{5}\\log_2 y^5 + \\frac{1}{3}\\log_2 y^6 + \\log_2 y^8 = 11 \\Rightarrow 1\\log_2 y + 2\\log_2 y + 8\\log_2 y = 11 \\Rightarrow 11\\log_2 y = 11 \\Rightarrow y=2$. Ta có $abc = y^5 y^6 y^8 = y^{19}$. Vậy $\\log_2(abc) = \\log_2(2^{19}) = 19$." },
+                { id: "log_p2_2", question: "Cho $a,b,c > 1$ và $m,n \\in \\mathbb{R}$. Đánh giá tính đúng/sai của các phép biến đổi lôgarit:", items: [
+                    { text: "$\\log_a(b+c) = \\log_a b + \\log_a c$.", isTrue: false },
+                    { text: "$\\log_{\\sqrt[3]{a}} \\frac{1}{a^3} = -9$.", isTrue: true },
+                    { text: "$\\log_a b^2 \\cdot \\log_{\\sqrt{b}} c \\cdot \\log_{c^2} a^3 = 6$.", isTrue: true },
+                    { text: "Cho $\\log_5 2 = m$, $\\log_5 3 = n$. Khi đó $\\log_{250} 30 = \\frac{m+n+1}{m+3}$.", isTrue: true }
+                ], explanation: "<b>Giải thích chi tiết:</b><br>a) Sai. Công thức đúng là lôgarit của một TÍCH: $\\log_a(b \\cdot c) = \\log_a b + \\log_a c$. Không có công thức cho lôgarit của một tổng.<br>b) Đúng. $\\log_{a^{1/3}} a^{-3} = \\frac{-3}{1/3} \\log_a a = -9$.<br>c) Đúng. Biểu thức bằng $2\\log_a b \\cdot 2\\log_b c \\cdot \\frac{3}{2}\\log_c a = \\left(2 \\cdot 2 \\cdot \\frac{3}{2}\\right)(\\log_a b \\cdot \\log_b c \\cdot \\log_c a) = 6 \\cdot 1 = 6$.<br>d) Đúng. $\\log_{250} 30 = \\frac{\\log_5 30}{\\log_5 250} = \\frac{\\log_5(2 \\cdot 3 \\cdot 5)}{\\log_5(5^3 \\cdot 2)} = \\frac{\\log_5 2 + \\log_5 3 + \\log_5 5}{3\\log_5 5 + \\log_5 2} = \\frac{m+n+1}{3+m}$." },
+                { id: "log_p2_3", question: "Công thức $\\log x = 11.8 + 1.5M$ cho biết mối liên hệ giữa năng lượng $x$ (erg) với độ lớn $M$ theo thang Richter của một trận động đất. Nhận định đúng/sai:", items: [
+                    { text: "Trận động đất có độ lớn 2 độ Richter tạo ra năng lượng khoảng $6.3 \\cdot 10^{34}$ erg.", isTrue: false },
+                    { text: "Trận động đất có độ lớn 3 độ Richter tạo ra năng lượng khoảng $2 \\cdot 10^9$ jun (biết $10^7$ erg = 1 jun).", isTrue: true },
+                    { text: "Động đất 5 độ Richter tạo ra năng lượng gấp 100 lần so với động đất 3 độ Richter.", isTrue: false },
+                    { text: "Một trận động đất từ 4 đến 6 độ Richter sẽ có năng lượng nằm trong khoảng $10^{17.8} \\le x \\le 10^{20.8}$ erg.", isTrue: true }
+                ], explanation: "<b>Giải thích chi tiết:</b><br>a) Sai. Thay $M=2 \\Rightarrow \\log x = 11.8 + 1.5(2) = 14.8 \\Rightarrow x = 10^{14.8} \\approx 6.3 \\cdot 10^{14}$ erg (không phải $10^{34}$).<br>b) Đúng. Thay $M=3 \\Rightarrow \\log x = 11.8 + 1.5(3) = 16.3 \\Rightarrow x = 10^{16.3}$ erg $= 10^{16.3} \\cdot 10^{-7}$ J $= 10^{9.3}$ J $\\approx 1.995 \\cdot 10^9$ J $\\approx 2 \\cdot 10^9$ J.<br>c) Sai. Ta có $\\log x_1 - \\log x_2 = 1.5(M_1 - M_2) = 1.5(5-3) = 3 \\Rightarrow \\log(x_1/x_2) = 3 \\Rightarrow x_1/x_2 = 10^3 = 1000$ lần.<br>d) Đúng. Khi $4 \\le M \\le 6 \\Rightarrow 11.8 + 1.5(4) \\le \\log x \\le 11.8 + 1.5(6) \\Rightarrow 17.8 \\le \\log x \\le 20.8 \\Rightarrow 10^{17.8} \\le x \\le 10^{20.8}$." },
+                { id: "log_p2_4", question: "Độ pH của dung dịch được tính theo công thức $\\text{pH} = -\\log[H^+]$, trong đó $[H^+]$ là nồng độ ion $H^+$ trong dung dịch.", items: [
+                    { text: "Nếu $[H^+] = 10^{-6}$ thì dung dịch có độ pH là 6.", isTrue: true },
+                    { text: "Nồng độ ion hydrogen của nước chanh là $[H^+] = 5.0 \\cdot 10^{-3}$ M nên nước chanh có tính bazơ (kiềm).", isTrue: false },
+                    { text: "Khi pH của dung dịch giảm từ 7 xuống 5 thì nồng độ ion $[H^+]$ tăng lên gấp 100 lần.", isTrue: true },
+                    { text: "Một dung dịch có độ pH = 3 bị pha loãng gấp 10 lần thì pH của dung dịch mới sẽ tăng lên đúng 1 đơn vị.", isTrue: true }
+                ], explanation: "<b>Giải thích chi tiết:</b><br>a) Đúng. $\\text{pH} = -\\log(10^{-6}) = -(-6) = 6$.<br>b) Sai. $\\text{pH} = -\\log(5.0 \\cdot 10^{-3}) \\approx 2.3 < 7$. Do $\\text{pH} < 7$, nước chanh có tính axit (acid), không phải bazơ.<br>c) Đúng. Giảm 2 đơn vị pH đồng nghĩa với việc nồng độ $[H^+]$ tăng lên $10^2 = 100$ lần.<br>d) Đúng. Nồng độ ban đầu là $10^{-3}$. Khi pha loãng 10 lần, nồng độ mới là $\\frac{10^{-3}}{10} = 10^{-4}$. Độ pH mới là $-\\log(10^{-4}) = 4$. Vậy pH tăng từ 3 lên 4 (tăng 1 đơn vị)." },
+                { id: "log_p2_5", question: "Về các tính chất cơ bản của biểu thức lôgarit:", items: [
+                    { text: "$\\log_a 1 = 0$ với mọi cơ số $a > 0, a \\ne 1$.", isTrue: true },
+                    { text: "$\\log_a a = 0$ với mọi cơ số $a > 0, a \\ne 1$.", isTrue: false },
+                    { text: "Lôgarit tự nhiên của e là $\\ln e = 1$.", isTrue: true },
+                    { text: "Lôgarit thập phân của 100 là $\\log 100 = 2$.", isTrue: true }
+                ], explanation: "<b>Giải thích chi tiết:</b><br>a) Đúng. Theo định nghĩa mọi số mũ 0 đều bằng 1 nên $\\log_a 1 = 0$.<br>b) Sai. Theo định nghĩa $a^1 = a$ nên $\\log_a a = 1$.<br>c) Đúng. $\\ln e = \\log_e e = 1$.<br>d) Đúng. $\\log 100 = \\log_{10} 10^2 = 2$." },
+                { id: "log_p2_6", question: "Cho các số thực dương $a, b, c$ với $a \\ne 1$. Xét tính đúng sai của các công thức biến đổi sau:", items: [
+                    { text: "$\\log_a(b \\cdot c) = \\log_a b \\cdot \\log_a c$.", isTrue: false },
+                    { text: "$\\log_a\\left(\\frac{b}{c}\\right) = \\log_a b - \\log_a c$.", isTrue: true },
+                    { text: "$\\log_{a^n} b = n \\log_a b$ với $n \\ne 0$.", isTrue: false },
+                    { text: "$\\log_a b^m = m \\log_a b$.", isTrue: true }
+                ], explanation: "<b>Giải thích chi tiết:</b><br>a) Sai. Công thức đúng của lôgarit một tích là tổng các lôgarit: $\\log_a(bc) = \\log_a b + \\log_a c$.<br>b) Đúng. Đây là công thức chuẩn cho lôgarit của một thương.<br>c) Sai. Khi đưa số mũ của cơ số ra ngoài, nó phải nằm ở dưới mẫu: $\\log_{a^n} b = \\frac{1}{n} \\log_a b$.<br>d) Đúng. Đây là công thức chuẩn đưa số mũ của biểu thức bên trong ra ngoài." },
+                { id: "log_p2_7", question: "Về công thức đổi cơ số lôgarit (giả sử các biểu thức đều xác định):", items: [
+                    { text: "$\\log_2 3 = \\frac{1}{\\log_3 2}$.", isTrue: true },
+                    { text: "$\\log_2 5 \\cdot \\log_5 8 = 3$.", isTrue: true },
+                    { text: "$\\log_4 9 = \\log_2 3$.", isTrue: true },
+                    { text: "$\\log_a b = \\frac{\\ln a}{\\ln b}$.", isTrue: false }
+                ], explanation: "<b>Giải thích chi tiết:</b><br>a) Đúng. Công thức nghịch đảo lôgarit.<br>b) Đúng. Sử dụng quy tắc chuỗi: $\\log_2 5 \\cdot \\log_5 8 = \\log_2 8 = 3$.<br>c) Đúng. $\\log_4 9 = \\log_{2^2} 3^2 = \\frac{2}{2}\\log_2 3 = \\log_2 3$.<br>d) Sai. Công thức đổi cơ số đúng là $\\log_a b = \\frac{\\ln b}{\\ln a}$ (cơ số mới nằm ở cả hai, số cũ nằm trên, cơ số cũ nằm dưới)." },
+                { id: "log_p2_8", question: "Cho biết $\\log_2 3 = a$. Dựa vào dữ kiện này để đánh giá các biểu thức sau:", items: [
+                    { text: "$\\log_4 3 = \\frac{a}{2}$.", isTrue: true },
+                    { text: "$\\log_2 9 = 2a$.", isTrue: true },
+                    { text: "$\\log_2 6 = a + 1$.", isTrue: true },
+                    { text: "$\\log_3 2 = -a$.", isTrue: false }
+                ], explanation: "<b>Giải thích chi tiết:</b><br>a) Đúng. $\\log_4 3 = \\log_{2^2} 3 = \\frac{1}{2}\\log_2 3 = \\frac{a}{2}$.<br>b) Đúng. $\\log_2 9 = \\log_2 3^2 = 2\\log_2 3 = 2a$.<br>c) Đúng. $\\log_2 6 = \\log_2(2 \\cdot 3) = \\log_2 2 + \\log_2 3 = 1 + a$.<br>d) Sai. Theo công thức nghịch đảo $\\log_3 2 = \\frac{1}{\\log_2 3} = \\frac{1}{a}$, không phải $-a$." },
+                { id: "log_p2_9", question: "Cho $\\log x = 2$ và $\\log y = 3$. Tính toán các biểu thức lôgarit sau:", items: [
+                    { text: "$\\log(xy) = 5$.", isTrue: true },
+                    { text: "$\\log\\left(\\frac{x}{y}\\right) = -1$.", isTrue: true },
+                    { text: "$\\log(x^2) = 4$.", isTrue: true },
+                    { text: "$\\log(x+y) = 5$.", isTrue: false }
+                ], explanation: "<b>Giải thích chi tiết:</b><br>a) Đúng. $\\log(xy) = \\log x + \\log y = 2 + 3 = 5$.<br>b) Đúng. $\\log(x/y) = \\log x - \\log y = 2 - 3 = -1$.<br>c) Đúng. $\\log(x^2) = 2\\log x = 2(2) = 4$.<br>d) Sai. Lôgarit của một tổng $\\log(x+y)$ không bằng tổng các lôgarit. Giá trị thực tế của $x=100, y=1000$, nên $\\log(x+y) = \\log(1100) \\approx 3.04$." },
+                { id: "log_p2_10", question: "Một người gửi 100 triệu đồng vào ngân hàng với lãi suất kép 5%/năm. Xét mô hình lãi kép liên tục $A = Pe^{rt}$:", items: [
+                    { text: "Sau 1 năm, số tiền nhận được là $100e^{0.05}$ triệu đồng.", isTrue: true },
+                    { text: "Giá trị của $e^{0.05}$ lớn hơn 1.", isTrue: true },
+                    { text: "Sau 2 năm, tổng số tiền đạt được là $100e^{0.1}$ triệu đồng.", isTrue: true },
+                    { text: "Tiền lãi thu được trong năm đầu tiên đúng bằng 5 triệu đồng.", isTrue: false }
+                ], explanation: "<b>Giải thích chi tiết:</b><br>a) Đúng. Áp dụng công thức $A = Pe^{rt}$ với $P=100, r=0.05, t=1$, ta có $A = 100e^{0.05}$.<br>b) Đúng. Vì $e \\approx 2.718 > 1$ và số mũ dương, nên $e^{0.05} > 1$ (khoảng 1.051).<br>c) Đúng. Với $t=2$, $A = 100e^{0.05 \\cdot 2} = 100e^{0.1}$.<br>d) Sai. Lãi thu được là $100(e^{0.05} - 1) \\approx 5.127$ triệu đồng. Do tính lãi liên tục (vô hạn lần chia nhỏ kỳ hạn), tiền lãi thực tế lớn hơn 5 triệu (tính lãi 1 lần/năm mới ra đúng 5 triệu)." }
+            ],
+            part3: [
+                { id: "log_p3_1", question: "Số lượng một loại vi khuẩn tăng trưởng theo công thức $S = Ae^{rt}$. Biết số lượng vi khuẩn ban đầu là 300 con và sau hai giờ là 1500 con. Sau bao nhiêu giờ thì số vi khuẩn có được gấp 625 lần số vi khuẩn ban đầu?", keywords: ["8"], explanation: "Sau hai giờ có 1500 con: $1500 = 300e^{2r} \\Leftrightarrow e^{2r} = 5 \\Leftrightarrow r = \\frac{\\ln 5}{2}$. <br>Để số vi khuẩn gấp 625 lần ban đầu: $625A = Ae^{rt} \\Leftrightarrow e^{rt} = 625$. <br>Thay $r$ vào: $e^{t \\cdot \\frac{\\ln 5}{2}} = 625 \\Leftrightarrow t \\cdot \\frac{\\ln 5}{2} = \\ln(625) = 4\\ln 5$. <br>Giải ra $t = \\frac{4\\ln 5}{\\frac{\\ln 5}{2}} = 8$ giờ." },
+                { id: "log_p3_2", question: "Cường độ trận động đất được cho bởi công thức $M = \\log A - \\log A_0$. Một trận động đất 8,5 độ Richter có biên độ tối đa $A$ lớn hơn trận động đất 5,0 độ Richter bao nhiêu lần? (Làm tròn đến phần nguyên).", keywords: ["3162"], explanation: "Biên độ của 8,5 độ là $A_1$: $8.5 = \\log\\frac{A_1}{A_0} \\Rightarrow A_1 = A_0 \\cdot 10^{8.5}$. <br>Biên độ của 5,0 độ là $A_2$: $5.0 = \\log\\frac{A_2}{A_0} \\Rightarrow A_2 = A_0 \\cdot 10^{5.0}$. <br>Tỷ lệ là $\\frac{A_1}{A_2} = \\frac{10^{8.5}}{10^{5.0}} = 10^{3.5} \\approx 3162.27$. Làm tròn thành 3162 lần." },
+                { id: "log_p3_3", question: "Cho $a, b, c$ là các số thực dương thỏa mãn $a^2 = bc$. Tính giá trị của biểu thức $S = 2\\ln a - \\ln b - \\ln c$.", keywords: ["0"], explanation: "Sử dụng tính chất lôgarit: $S = \\ln(a^2) - (\\ln b + \\ln c) = \\ln(a^2) - \\ln(bc)$. <br>Vì $a^2 = bc$ nên $S = \\ln(bc) - \\ln(bc) = 0$." },
+                { id: "log_p3_4", question: "Tính giá trị của biểu thức: $A = \\log_2 8 + \\log_3 81 - \\log 100$.", keywords: ["5"], explanation: "Áp dụng định nghĩa lôgarit ta tính từng số hạng: <br>$\\log_2 8 = \\log_2 2^3 = 3$ <br>$\\log_3 81 = \\log_3 3^4 = 4$ <br>$\\log 100 = \\log_{10} 10^2 = 2$. <br>Tổng $A = 3 + 4 - 2 = 5$." },
+                { id: "log_p3_10", question: "Một khoản đầu tư ban đầu tăng lên gấp đôi (200%) với hình thức lãi kép liên tục ở mức 7%/năm. Cần bao nhiêu năm để đạt được điều này? (Gợi ý dùng $\\ln 2 \\approx 0.693$, làm tròn kết quả đến 1 chữ số thập phân).", keywords: ["9.9", "9,9"], explanation: "Công thức $A = Pe^{rt}$. Để $A = 2P$, ta có $2P = Pe^{0.07t} \\Leftrightarrow e^{0.07t} = 2$. <br>Lấy $\\ln$ hai vế: $0.07t = \\ln 2 \\Leftrightarrow t = \\frac{\\ln 2}{0.07}$. <br>Tính ra $t \\approx \\frac{0.693}{0.07} = 9.9$ năm." }
+            ]
+        };
+
+        let currentSession = [];
+        let currentIndex = 0;
+        let score = 0;
+        let selectedAnswers = null;
+
+        function shuffle(array) { return array.sort(() => Math.random() - 0.5); }
+
+        function initGame() {
+            // Thuật toán Anti-repetition: Đảm bảo trùng lặp không quá 2 câu
+            let playedHistory = JSON.parse(localStorage.getItem('played_history_log_chuan_v2') || '[]');
+            const lastRoundIds = JSON.parse(localStorage.getItem('last_round_log_chuan_v2') || '[]');
+            
+            let globalRecycledCount = 0; // Đếm số câu bị trùng với lượt trước
+
+            const getFresh = (pool, count) => {
+                // Ưu tiên cao nhất: Lọc bỏ những câu đã từng làm VÀ câu vừa làm ở lượt trước
+                let available = pool.filter(q => !playedHistory.includes(q.id) && !lastRoundIds.includes(q.id));
+                let selected = [];
+                
+                if (available.length >= count) {
+                    selected = shuffle(available).slice(0, count);
+                } else {
+                    // Nếu cạn kho: Reset lại lịch sử tổng, nhưng VẪN PHẢI NÉ các câu của lượt liền trước
+                    const poolIds = pool.map(p => p.id);
+                    playedHistory = playedHistory.filter(id => !poolIds.includes(id));
+                    available = pool.filter(q => !lastRoundIds.includes(q.id));
+                    
+                    if (available.length >= count) {
+                        selected = shuffle(available).slice(0, count);
+                    } else {
+                        // Nới lỏng: Khi số câu còn lại ít hơn yêu cầu, lấy bù từ lượt trước nhưng KHÔNG QUÁ 2 CÂU
+                        selected = [...available];
+                        let needed = count - available.length;
+                        let maxAllowed = Math.max(0, 2 - globalRecycledCount);
+                        let take = Math.min(needed, maxAllowed);
+                        let recycled = shuffle(pool.filter(q => lastRoundIds.includes(q.id)));
+                        selected = selected.concat(recycled.slice(0, take));
+                        globalRecycledCount += take;
+                    }
+                }
+                
+                playedHistory.push(...selected.map(q => q.id));
+                return selected;
+            };
+
+            const p1 = getFresh(MASTER_POOL.part1, 7);
+            const p2 = getFresh(MASTER_POOL.part2, 5);
+            const p3 = getFresh(MASTER_POOL.part3, 3);
+
+            currentSession = [...p1, ...p2, ...p3];
+            
+            // Lưu lại ID của lượt này
+            localStorage.setItem('played_history_log_chuan_v2', JSON.stringify(playedHistory));
+            localStorage.setItem('last_round_log_chuan_v2', JSON.stringify(currentSession.map(q => q.id)));
+
+            currentIndex = 0; 
+            score = 0;
+            document.getElementById('start-screen').classList.add('hidden');
+            document.getElementById('progress-container').classList.remove('hidden');
+            document.getElementById('footer-actions').classList.remove('hidden');
+            renderQuestion();
+        }
+
+        function renderQuestion() {
+            const container = document.getElementById('main-content');
+            const data = currentSession[currentIndex];
+            const qNum = currentIndex + 1;
+            selectedAnswers = (currentIndex < 7) ? null : (currentIndex < 12 ? {} : "");
+
+            document.getElementById('status').innerText = `CÂU ${qNum} / 15`;
+            document.getElementById('progress-bar').style.width = `${(qNum / 15) * 100}%`;
+            document.getElementById('check-btn').classList.remove('hidden');
+            document.getElementById('next-btn').classList.add('hidden');
+            document.getElementById('result-btn').classList.add('hidden');
+
+            let html = `<div class="fade-in">
+                <div class="mb-10 flex items-center gap-4">
+                    <span class="bg-blue-600 text-white text-xs font-black px-5 py-2.5 rounded-2xl uppercase tracking-widest shadow-lg shadow-blue-100">PHẦN ${qNum <= 7 ? 'I: TRẮC NGHIỆM' : (qNum <= 12 ? 'II: ĐÚNG/SAI' : 'III: TRẢ LỜI NGẮN')}</span>
+                </div>
+                <div class="text-xl md:text-2xl font-bold text-slate-800 mb-12 leading-relaxed math-render" id="q-text">${data.question}</div>`;
+
+            if (currentIndex < 7) { 
+                html += `<div class="grid gap-6">`;
+                data.options.forEach((opt, i) => {
+                    html += `<button onclick="pickMCQ(${i})" id="mcq-${i}" class="choice-btn group p-7 border-2 border-slate-100 rounded-[2rem] text-left hover:border-blue-400 hover:bg-blue-50 transition-all flex items-center gap-8">
+                        <div class="w-14 h-14 rounded-3xl bg-slate-50 flex items-center justify-center font-black text-slate-400 group-hover:text-blue-600 transition-colors text-2xl">${String.fromCharCode(65+i)}</div>
+                        <div class="text-xl font-semibold text-slate-700 math-render">${opt}</div>
+                    </button>`;
+                });
+                html += `</div>`;
+            } else if (currentIndex < 12) { 
+                html += `<div class="space-y-6">`;
+                data.items.forEach((item, i) => {
+                    html += `<div class="item-row flex flex-col md:flex-row md:items-center justify-between p-7 bg-slate-50 rounded-[2.5rem] border border-slate-100 gap-6 shadow-sm">
+                        <div class="flex items-start gap-4">
+                            <span class="font-black text-blue-500 mt-1 text-lg">${['a)', 'b)', 'c)', 'd)'][i]}</span>
+                            <span class="text-xl text-slate-700 font-bold leading-relaxed math-render">${item.text}</span>
+                        </div>
+                        <div class="flex gap-4 min-w-[260px]">
+                            <button onclick="pickTF(${i}, true)" id="tf-${i}-t" class="flex-1 py-5 rounded-[1.5rem] border-2 border-white bg-white font-black text-lg transition active:scale-90 shadow-sm text-slate-400 hover:text-blue-600">ĐÚNG</button>
+                            <button onclick="pickTF(${i}, false)" id="tf-${i}-f" class="flex-1 py-5 rounded-[1.5rem] border-2 border-white bg-white font-black text-lg transition active:scale-90 shadow-sm text-slate-400 hover:text-blue-600">SAI</button>
+                        </div>
+                    </div>`;
+                });
+                html += `</div>`;
+            } else { 
+                html += `<div class="relative max-w-lg mx-auto mt-12">
+                    <input type="text" id="short-ans" class="w-full p-10 border-4 border-slate-100 rounded-[3rem] text-5xl font-black text-center text-blue-600 focus:border-blue-400 outline-none transition shadow-inner" placeholder="Nhập đáp án...">
+                </div>`;
+            }
+
+            html += `<div id="exp-box" class="hidden mt-12 p-10 rounded-[3rem] explanation-box"></div></div>`;
+            container.innerHTML = html;
+            
+            if (window.MathJax) {
+                MathJax.typesetPromise().then(() => {
+                    document.querySelectorAll('.math-render').forEach(el => el.classList.add('ready'));
+                });
+            }
+        }
+
+        function pickMCQ(idx) {
+            selectedAnswers = idx;
+            document.querySelectorAll('[id^="mcq-"]').forEach(b => {
+                b.classList.replace('border-blue-500', 'border-slate-100');
+                b.classList.remove('bg-blue-50');
+            });
+            document.getElementById(`mcq-${idx}`).classList.replace('border-slate-100', 'border-blue-500');
+            document.getElementById(`mcq-${idx}`).classList.add('bg-blue-50');
+        }
+
+        function pickTF(idx, val) {
+            if (typeof selectedAnswers !== 'object') selectedAnswers = {};
+            selectedAnswers[idx] = val;
+            const btnT = document.getElementById(`tf-${idx}-t`), btnF = document.getElementById(`tf-${idx}-f`);
+            btnT.className = `flex-1 py-5 rounded-[1.5rem] border-2 font-black text-lg transition active:scale-90 ${val === true ? 'bg-blue-600 text-white border-blue-600 shadow-md' : 'bg-white border-white text-slate-400'}`;
+            btnF.className = `flex-1 py-5 rounded-[1.5rem] border-2 font-black text-lg transition active:scale-90 ${val === false ? 'bg-blue-600 text-white border-blue-600 shadow-md' : 'bg-white border-white text-slate-400'}`;
+        }
+
+        function processAnswer() {
+            const data = currentSession[currentIndex];
+            let isCorrect = false;
+
+            if (currentIndex < 7) {
+                if (selectedAnswers === null) return alert("Vui lòng chọn đáp án!");
+                isCorrect = (selectedAnswers === data.correct);
+                if (isCorrect) score += 1;
+                document.getElementById(`mcq-${data.correct}`).classList.add('bg-green-50', 'border-green-500');
+                if(!isCorrect) document.getElementById(`mcq-${selectedAnswers}`).classList.add('bg-red-50', 'border-red-500');
+            } else if (currentIndex < 12) {
+                let correctCount = 0;
+                let isFullAnswered = true;
+                for(let i=0; i<4; i++) { if(selectedAnswers[i] === undefined) isFullAnswered = false; }
+                if(!isFullAnswered) return alert("Vui lòng chọn Đúng/Sai cho tất cả các ý!");
+
+                data.items.forEach((item, i) => { if (selectedAnswers[i] === item.isTrue) correctCount++; });
+                const points = [0, 0.1, 0.25, 0.5, 1];
+                score += points[correctCount];
+                isCorrect = (correctCount === 4);
+            } else {
+                const input = document.getElementById('short-ans').value.trim().toLowerCase().replace(',', '.');
+                if(!input) return alert("Vui lòng nhập đáp án!");
+                isCorrect = data.keywords.some(k => input.includes(k.toLowerCase()));
+                if (isCorrect) score += 1;
+            }
+
+            const exp = document.getElementById('exp-box');
+            exp.innerHTML = `<h4 class="text-blue-800 font-extrabold text-2xl mb-6 uppercase tracking-tighter">${isCorrect ? '✨ CHÍNH XÁC!' : '❌ HÃY KIỂM TRA LẠI LỜI GIẢI'}</h4>
+                             <div class="text-slate-700 font-medium leading-loose math-render text-lg" id="exp-text">${data.explanation}</div>`;
+            exp.classList.remove('hidden');
+            document.getElementById('check-btn').classList.add('hidden');
+
+            if (currentIndex === 14) document.getElementById('result-btn').classList.remove('hidden');
+            else document.getElementById('next-btn').classList.remove('hidden');
+            
+            if (window.MathJax) {
+                MathJax.typesetPromise().then(() => {
+                    const el = document.getElementById('exp-text');
+                    if(el) el.classList.add('ready');
+                });
+            }
+        }
+
+        function renderNext() { currentIndex++; renderQuestion(); }
+
+        function finishGame() {
+            const container = document.getElementById('main-content');
+            document.getElementById('footer-actions').classList.add('hidden');
+            document.getElementById('progress-container').classList.add('hidden');
+            
+            const finalScore = ((score / 15) * 10).toFixed(2);
+            let rank = finalScore >= 8.5 ? "XUẤT SẮC" : (finalScore >= 6.5 ? "KHÁ GIỎI" : "CẦN CỐ GẮNG");
+            
+            container.innerHTML = `<div class="text-center py-20 fade-in">
+                <div class="text-[12rem] mb-12 animate-pulse drop-shadow-2xl">🏆</div>
+                <h2 class="text-6xl font-black text-slate-800 mb-6 uppercase tracking-tighter">${rank}</h2>
+                <div class="text-[10rem] leading-none font-black text-blue-600 my-16 tracking-tighter italic">${finalScore}<span class="text-4xl text-slate-300 ml-6 not-italic">/ 10</span></div>
+                <button onclick="location.reload()" class="bg-blue-600 text-white px-24 py-8 rounded-[3rem] font-black text-3xl shadow-xl hover:bg-blue-700 transition active:scale-95 uppercase tracking-wide">LÀM ĐỀ MỚI</button>
+            </div>`;
+        }
+    </script>
+</body>
+</html>
